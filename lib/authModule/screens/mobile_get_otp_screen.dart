@@ -1,30 +1,49 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:mmt_courses/authModule/providers/users.dart';
 import 'package:mmt_courses/authModule/widgets/custom_button.dart';
 
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mmt_courses/authModule/widgets/custom_footer.dart';
+import 'package:mmt_courses/common_widgets/custom_background_container.dart';
+import 'package:provider/provider.dart';
 
-import 'mobile_verify_otp.dart';
+import '../models/user.dart';
+import 'mobile_verify_otp_screen.dart';
 
 class MobileGetOtpScreen extends StatelessWidget {
   static const routeName = "/mobile-get-otp";
 
-  const MobileGetOtpScreen({Key? key}) : super(key: key);
+  MobileGetOtpScreen({Key? key}) : super(key: key);
+
+  final _formKey = GlobalKey<FormState>();
+  late User _user;
 
   @override
   Widget build(BuildContext context) {
+    void _saveForm() {
+      final isValid = _formKey.currentState!.validate();
+
+      if (!isValid) {
+        return;
+      }
+      _formKey.currentState!.save();
+    }
+
+    String? validateMobile(String value) {
+      String pattern = r'([6,7,8,9][0-9]{9})';
+      RegExp regExp = RegExp(pattern);
+      if (value.isEmpty) {
+        return 'Please enter mobile number';
+      } else if (!regExp.hasMatch(value)) {
+        return 'Please enter valid mobile number';
+      }
+      return null;
+    }
+
     return Scaffold(
-      body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment(0.0, 0.0),
-              end: Alignment(0.199, .98),
-              colors: [
-                Color.fromRGBO(251, 255, 244, 1),
-                Color.fromRGBO(152, 204, 236, 1)
-              ],
-            ),
-          ),
+      body: Form(
+        key: _formKey,
+        child: CustomBackgroundContainer(
           child: SingleChildScrollView(
             child: Container(
               margin: EdgeInsets.symmetric(horizontal: 24),
@@ -73,17 +92,35 @@ class MobileGetOtpScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  TextField(
+                  TextFormField(
+                    onEditingComplete: _saveForm,
                     maxLines: 1,
+                    maxLength: 10,
                     textAlignVertical: TextAlignVertical.center,
                     keyboardType: TextInputType.phone,
-                    maxLength: 10,
+                    validator: (v) => validateMobile(v!),
+                    onSaved: (value) async {
+                      _user = User(
+                        name: null,
+                        imagePath: null,
+                        birthDate: null,
+                        gender: null,
+                        email: null,
+                        mobileNumber: value!,
+                        wishlistCourseIds: [],
+                        enrolledCourseIds: [],
+                      );
+
+                      Navigator.of(context).pushNamed(
+                        MobileVerifyOtpScreen.routeName,
+                      );
+                      Provider.of<Users>(context, listen: false).addUser(_user);
+                    },
                     decoration: InputDecoration(
-                        counter: Container(),
+                        counterText: "",
                         prefixIcon: Padding(
                           padding: const EdgeInsets.all(11.0),
-                          child:
-                              SvgPicture.asset("assets/images/mobile_02.svg"),
+                          child: SvgPicture.asset("assets/images/mobile.svg"),
                         ),
                         enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(
@@ -108,10 +145,7 @@ class MobileGetOtpScreen extends StatelessWidget {
                     alignment: Alignment.center,
                     child: CustomButton(
                         buttonText: "GET OTP",
-                        onTap: () {
-                          Navigator.of(context)
-                              .pushNamed(MobileVerifyOtp.routeName);
-                        },
+                        onTap: _saveForm,
                         isEnable: true),
                   ),
                   Container(
@@ -153,51 +187,14 @@ class MobileGetOtpScreen extends StatelessWidget {
                   ),
                   Expanded(
                     flex: 5,
-                    child: Container(
-                      alignment: Alignment.bottomCenter,
-                      child: RichText(
-                        textAlign: TextAlign.center,
-                        text: TextSpan(children: [
-                          TextSpan(
-                            text: "By continuing you agree to the ",
-                            style: TextStyle(
-                                fontFamily: "Montserrat",
-                                fontWeight: FontWeight.w500,
-                                fontSize: 10,
-                                color: Color.fromRGBO(115, 115, 115, 1)),
-                          ),
-                          TextSpan(
-                            text: "Terms of services ",
-                            style: TextStyle(
-                                fontFamily: "Montserrat",
-                                fontWeight: FontWeight.w700,
-                                fontSize: 10,
-                                color: Color.fromRGBO(115, 115, 115, 1)),
-                          ),
-                          TextSpan(
-                            text: "and ",
-                            style: TextStyle(
-                                fontFamily: "Montserrat",
-                                fontWeight: FontWeight.w500,
-                                fontSize: 10,
-                                color: Color.fromRGBO(115, 115, 115, 1)),
-                          ),
-                          TextSpan(
-                            text: "\nPrivacy policy ",
-                            style: TextStyle(
-                                fontFamily: "Montserrat",
-                                fontWeight: FontWeight.w700,
-                                fontSize: 10,
-                                color: Color.fromRGBO(115, 115, 115, 1)),
-                          )
-                        ]),
-                      ),
-                    ),
+                    child: CustomFooter(),
                   )
                 ],
               ),
             ),
-          )),
+          ),
+        ),
+      ),
     );
   }
 }
